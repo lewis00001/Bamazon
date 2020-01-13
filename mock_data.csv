@@ -5,8 +5,8 @@
 2201,mass_accelerator,physics,12320.00,11
 2202,angular_velocity_redirector,physics,1180.50,9
 2203,elastic_collision_inhibitor,physics,32540.80,4
-2204,faraday_ion_trnsformer,physics,18600.00,14
+2204,faraday_ion_transformer,physics,18600.00,14
 3401,eukaryote_amalgamation_tube,biology,43.82,24
-3402,ribosome_transporter,98.50,18
-3403,epigentic_cell_influencer,12100.30,9
-3404,monocotyledon_reverser,840.21,24
+3402,ribosome_transporter,biology,98.50,18
+3403,epigentic_cell_influencer,biology,12100.30,9
+3404,monocotyledon_reverser,biology,840.21,24
