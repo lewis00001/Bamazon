@@ -1,12 +1,14 @@
-let mysql = require("mysql");
-let inquirer = require("inquirer");
-var table = require("console.table");
+require("dotenv").config();
+const dbPass = require("./passDB.js");
+const mysql = require("mysql");
+const inquirer = require("inquirer");
+const table = require("console.table");
 
 let connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
     user: "root",
-    password: "#5sql#78L2020",
+    password: dbPass.pass.p,
     database: "bamazonDB"
 });
 
