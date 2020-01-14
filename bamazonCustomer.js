@@ -2,6 +2,7 @@ require("dotenv").config();
 const dbPass = require("./passDB.js");
 const mysql = require("mysql");
 const inquirer = require("inquirer");
+const colors = require("colors");
 const table = require("console.table");
 const _$ = require("currency-formatter");
 
@@ -35,6 +36,33 @@ function welcomePrompt() {
             switch (answer.action) {
                 case "View Inventory":
                     displayProducts();
+                    break;
+                case "Exit":
+                    connection.end();
+                    break;
+            }
+        });
+}
+
+function actionPrompt() {
+    inquirer
+        .prompt({
+            name: "action",
+            type: "list",
+            message: "Please make a selection.",
+            choices: [
+                "View Inventory",
+                "Place an order",
+                "Exit"
+            ]
+        })
+        .then(function (answer) {
+            switch (answer.action) {
+                case "View Inventory":
+                    displayProducts();
+                    break;
+                case "Place an order":
+                    getOrder();
                     break;
                 case "Exit":
                     connection.end();
@@ -96,6 +124,7 @@ function getOrder() {
 
 function confirmOrder(id, quant) {
     let _item = "";
+    let _quant = 0;
     let _price = 0.00;
     let c_price = 0.00;
     let c_total = 0.00;
@@ -103,24 +132,41 @@ function confirmOrder(id, quant) {
     for (let i = 0; i < db.length; i++) {
         if (db[i].item_id === parseInt(id)) {
             _item = db[i].product_name;
+            _quant = parseInt(db[i].stock_quantity);
             _price = parseFloat(db[i].price);
+
+            c_price = _$.format(_price, {
+                code: 'USD'
+            });
+            c_total = _$.format(_price * quant, {
+                code: 'USD'
+            });
         }
-        c_price = _$.format(_price, {
-            code: 'USD'
-        });
-        c_total = _$.format(_price * quant, {
-            code: 'USD'
-        });
     }
 
-    console.log("\nOrder Details: \n" +
+    if (_item === "") {
+        console.log(colors.brightRed("\n*** Item not found ***\n"));
+        actionPrompt();
+    } else if (_quant < quant) {
+        console.log(colors.brightRed("\n*** Order Declined: insufficient quantity\n" +
+            "*** You ordered: " + quant + "\n" +
+            "*** Items in stock: " + _quant + "\n"));
+        actionPrompt();
+    } else {
+        processOrder(_item, quant, c_price, c_total);
+    }
+}
+
+function processOrder(p_item, p_quant, p_c_price, p_c_total) {
+
+    console.log(colors.brightGreen("\nOrder Details: \n" +
         "- - - - - - - - - - - - - - - - - - - - - - - - -\n" +
-        "Item: " +        _item +   "\n" +
-        "Quantity: " +    quant +   "\n" +
-        "Unit Price: " +  c_price + "\n" +
-        "Total Price: " + c_total + "\n" +
+        "Item: " + p_item + "\n" +
+        "Quantity: " + p_quant + "\n" +
+        "Unit Price: " + p_c_price + "\n" +
+        "Total Price: " + p_c_total + "\n" +
         "- - - - - - - - - - - - - - - - - - - - - - - - -\n"
-    );
+    ));
 
     inquirer
         .prompt({
@@ -136,7 +182,7 @@ function confirmOrder(id, quant) {
         .then(function (answer) {
             switch (answer.action) {
                 case "Yes":
-                    console.log("\n*** Thank you. Your order is complete. ***\n");
+                    console.log(colors.brightGreen("\n*** Thank you. Your order is complete. ***\n"));
                     orderPrompt();
                     break;
                 case "No":

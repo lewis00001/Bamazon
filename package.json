@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/lewis00001/Bamazon#readme",
   "dependencies": {
+    "colors": "^1.4.0",
     "console.table": "^0.10.0",
     "currency-formatter": "^1.5.5",
     "dotenv": "^8.2.0",
