@@ -6,7 +6,6 @@ const colors = require("colors");
 const table = require("console.table");
 const _$ = require("currency-formatter");
 
-let db = {};
 
 let connection = mysql.createConnection({
     host: "localhost",
@@ -45,15 +44,12 @@ function welcomePrompt() {
                     break;
                 case "View Low Inventory":
                     lowInventory();
-                    console.log("view low");
                     break;
                 case "Add to Inventory":
-                    //displayProducts();
-                    console.log("add");
+                    promptAddToCurrent();
                     break;
                 case "Add New Product":
-                    //displayProducts();
-                    console.log("add new");
+                    promptAddNewProduct();
                     break;
                 case "Exit":
                     connection.end();
@@ -70,34 +66,133 @@ function displayProducts() {
         } else {
             console.log(""); // adds space above the table
             console.table(response, "\n");
-            db = response;
-            orderPrompt();
+            welcomePrompt();
         }
     });
 }
 
 function lowInventory() {
-    console.log("view low");
+    let lowThresh = 5;
+    let getLow = "SELECT * FROM products WHERE stock_quantity <=" + lowThresh;
+    connection.query(getLow, function (error, response) {
+
+        if (error) {
+            throw error;
+        } else {
+            console.log(""); // adds space above the table
+            console.table(response, "\n");
+            welcomePrompt();
+        }
+    })
 }
 
-function updateInventory(u_quant, u_id) {
-    let getCurrentQuant = "SELECT stock_quantity FROM products WHERE item_id = " + u_id;
-    let currentQuant = 0;
-    connection.query(getCurrentQuant, function (error, response) {
-        
-            if (error) {
-                throw error;
-            }
-            currentQuant = response[0].stock_quantity;
-            console.log("\nThe current quant is: " + currentQuant);
-
-            let updatedQuant = currentQuant - u_quant;
-            console.log("The updated quant is: " + updatedQuant);
-            let update = "UPDATE products SET stock_quantity = " + updatedQuant + " WHERE item_id = " + u_id;
-            connection.query(update, function (error, response) {
-                if (error) {
-                    throw error;
+function promptAddToCurrent() {
+    inquirer
+        .prompt([{
+            name: "id",
+            type: "input",
+            message: "Select product to add inventory to. (enter product_id)",
+            validate: function (value) {
+                if (isNaN(value) === false) {
+                    return true;
                 }
-            });
+                return false;
+            }
+        }, {
+            name: "quant",
+            type: "input",
+            message: "How many would you like to add?",
+            validate: function (value) {
+                if (isNaN(value) === false) {
+                    return true;
+                }
+                return false;
+            }
+        }])
+        .then(function (answer) {
+            addToCurrent(parseInt(answer.id), parseInt(answer.quant));
         })
 }
+
+function addToCurrent(u_id, u_quant) {
+    let getCurrentQuant = "SELECT stock_quantity FROM products WHERE item_id = " + u_id;
+    let getUpdated = "SELECT * FROM products WHERE item_id = " + u_id;
+    let currentQuant = 0;
+    let updatedQuant = 0;
+    connection.query(getCurrentQuant, function (error, response) {
+
+        if (error) {
+            throw error;
+        }
+
+        currentQuant = response[0].stock_quantity;
+
+        updatedQuant = currentQuant + u_quant;
+        let update = "UPDATE products SET stock_quantity = " + updatedQuant + " WHERE item_id = " + u_id;
+        connection.query(update, function (error) {
+            if (error) {
+                throw error;
+            } else {
+                connection.query(getUpdated, function (error, response) {
+                    if (error) {
+                        throw error;
+                    }
+                    console.log(""); // adds space above the table
+                    console.table(response, "\n");
+                    welcomePrompt();
+                })
+            }
+        });
+    })
+}
+
+function promptAddNewProduct() {
+    console.log(colors.brightGreen("Please enter the new product information below:"));
+    inquirer
+        .prompt([{
+            name: "id",
+            type: "input",
+            message: "Item ID:"
+        }, {
+            name: "product",
+            type: "input",
+            message: "Product Name:"
+        }])
+        .then(function (answer) {
+            console.log("reached 'then' function")
+        })
+}
+
+
+
+
+
+
+
+
+// validate: function (value) {
+//     let queryIds = "SELECT item_id FROM products";
+//     let idIsValid = true;
+//     connection.query(queryIds, function (error, response) {
+//         if (error) {
+//             throw error;
+//         } else {
+//             for (let i = 0; i < response.length; i++) {
+//                 if (response[i].item_id === parseInt(value)) {
+//                     idIsValid = false;
+//                 }
+//             }
+//             if (idIsValid === false) {
+//                 console.log(colors.brightRed("\n" + value + " is already in use.\nPress up arrow to re-enter:"));
+//             } else {
+//                 console.log(colors.brightGreen(" - ID Validated\n"));
+//                 idIsValid = true;
+//             }
+//         }
+//     })
+//     if (idIsValid === true) {
+//         return true;
+//     } else {
+//         return false;
+//     }
+// }
