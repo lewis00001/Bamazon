@@ -17,8 +17,11 @@ let connection = mysql.createConnection({
 });
 
 connection.connect(function (error) {
-    if (error) throw error;
-    welcomePrompt();
+    if (error) {
+        throw error;
+    } else {
+        welcomePrompt();
+    }
 });
 
 function welcomePrompt() {
@@ -153,11 +156,11 @@ function confirmOrder(id, quant) {
             "*** Items in stock: " + _quant + "\n"));
         actionPrompt();
     } else {
-        processOrder(_item, quant, c_price, c_total);
+        processOrder(_item, quant, c_price, c_total, id);
     }
 }
 
-function processOrder(p_item, p_quant, p_c_price, p_c_total) {
+function processOrder(p_item, p_quant, p_c_price, p_c_total, p_id) {
 
     console.log(colors.brightGreen("\nOrder Details: \n" +
         "- - - - - - - - - - - - - - - - - - - - - - - - -\n" +
@@ -180,10 +183,12 @@ function processOrder(p_item, p_quant, p_c_price, p_c_total) {
             ]
         })
         .then(function (answer) {
+
             switch (answer.action) {
                 case "Yes":
                     console.log(colors.brightGreen("\n*** Thank you. Your order is complete. ***\n"));
-                    orderPrompt();
+                    updateInventory(p_quant, p_id);
+                    actionPrompt();
                     break;
                 case "No":
                     displayProducts();
@@ -207,4 +212,26 @@ function displayProducts() {
             orderPrompt();
         }
     });
+}
+
+function updateInventory(u_quant, u_id) {
+    let getCurrentQuant = "SELECT stock_quantity FROM products WHERE item_id = " + u_id;
+    let currentQuant = 0;
+    connection.query(getCurrentQuant, function (error, response) {
+        
+            if (error) {
+                throw error;
+            }
+            currentQuant = response[0].stock_quantity;
+            console.log("\nThe current quant is: " + currentQuant);
+
+            let updatedQuant = currentQuant - u_quant;
+            console.log("The updated quant is: " + updatedQuant);
+            let update = "UPDATE products SET stock_quantity = " + updatedQuant + " WHERE item_id = " + u_id;
+            connection.query(update, function (error, response) {
+                if (error) {
+                    throw error;
+                }
+            });
+        })
 }
