@@ -138,6 +138,7 @@ function addToCurrent(u_id, u_quant) {
                         throw error;
                     }
                     console.log(""); // adds space above the table
+                    console.log(colors.brightGreen("Inventory updated for:\n"));
                     console.table(response, "\n");
                     welcomePrompt();
                 })
@@ -157,10 +158,44 @@ function promptAddNewProduct() {
             name: "product",
             type: "input",
             message: "Product Name:"
+        }, {
+            name: "department",
+            type: "input",
+            message: "Department:"
+        }, {
+            name: "price",
+            type: "input",
+            message: "Price Each:"
+        }, {
+            name: "stock",
+            type: "input",
+            message: "Amount in Stock:"
         }])
         .then(function (answer) {
-            console.log("reached 'then' function")
+            let a = answer;
+            addNewProduct(a.id, a.product, a.department, a.price, a.stock);
         })
+}
+
+function addNewProduct(id, product, department, price, stock) {
+    let p_add = "INSERT INTO products (item_id, product_name, department_name, price, stock_quantity)" +
+        "VALUES (" + id + ",\"" + product + "\",\"" + department + "\"," + price + "," + stock + ")";
+    connection.query(p_add, function (error) {
+        if (error) {
+            throw error;
+        } else {
+            let a_getUpdated = "SELECT * FROM products WHERE item_id = " + id;
+            connection.query(a_getUpdated, function (error, response) {
+                if (error) {
+                    throw error;
+                }
+                console.log(""); // adds space above the table
+                console.log(colors.brightGreen("The following product was added:\n"));
+                console.table(response, "\n");
+                welcomePrompt();
+            });
+        }
+    });
 }
 
 
