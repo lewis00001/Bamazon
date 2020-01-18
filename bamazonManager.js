@@ -178,8 +178,8 @@ function promptAddNewProduct() {
 }
 
 function addNewProduct(id, product, department, price, stock) {
-    let p_add = "INSERT INTO products (item_id, product_name, department_name, price, stock_quantity)" +
-        "VALUES (" + id + ",\"" + product + "\",\"" + department + "\"," + price + "," + stock + ")";
+    let p_add = "INSERT INTO products (item_id, product_name, department_name, price, stock_quantity, product_sales)" +
+        "VALUES (" + id + ",\"" + product + "\",\"" + department + "\"," + price + "," + stock + "," + 0 + ")";
     connection.query(p_add, function (error) {
         if (error) {
             throw error;

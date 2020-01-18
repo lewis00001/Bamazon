@@ -131,6 +131,7 @@ function confirmOrder(id, quant) {
     let _price = 0.00;
     let c_price = 0.00;
     let c_total = 0.00;
+    let preFormatTotal = 0.00;
 
     for (let i = 0; i < db.length; i++) {
         if (db[i].item_id === parseInt(id)) {
@@ -141,7 +142,8 @@ function confirmOrder(id, quant) {
             c_price = _$.format(_price, {
                 code: 'USD'
             });
-            c_total = _$.format(_price * quant, {
+            preFormatTotal = _price * quant;
+            c_total = _$.format(preFormatTotal, {
                 code: 'USD'
             });
         }
@@ -156,11 +158,11 @@ function confirmOrder(id, quant) {
             "*** Items in stock: " + _quant + "\n"));
         actionPrompt();
     } else {
-        processOrder(_item, quant, c_price, c_total, id);
+        processOrder(_item, quant, c_price, c_total, id, preFormatTotal);
     }
 }
 
-function processOrder(p_item, p_quant, p_c_price, p_c_total, p_id) {
+function processOrder(p_item, p_quant, p_c_price, p_c_total, p_id, p_preFormatTotal) {
 
     console.log(colors.brightGreen("\nOrder Details: \n" +
         "- - - - - - - - - - - - - - - - - - - - - - - - -\n" +
@@ -187,7 +189,7 @@ function processOrder(p_item, p_quant, p_c_price, p_c_total, p_id) {
             switch (answer.action) {
                 case "Yes":
                     console.log(colors.brightGreen("\n*** Thank you. Your order is complete. ***\n"));
-                    updateInventory(p_quant, p_id);
+                    updateInventory(p_quant, p_id, p_preFormatTotal);
                     actionPrompt();
                     break;
                 case "No":
@@ -201,7 +203,7 @@ function processOrder(p_item, p_quant, p_c_price, p_c_total, p_id) {
 }
 
 function displayProducts() {
-    let query = "SELECT * FROM products";
+    let query = "SELECT item_id, product_name, department_name, price, stock_quantity FROM products";
     connection.query(query, function (error, response) {
         if (error) {
             throw error;
@@ -214,8 +216,9 @@ function displayProducts() {
     });
 }
 
-function updateInventory(u_quant, u_id) {
-    let getCurrentQuant = "SELECT stock_quantity FROM products WHERE item_id = " + u_id;
+function updateInventory(u_quant, u_id, u_total) {
+    console.log(u_total);
+    let getCurrentQuant = "SELECT stock_quantity, product_sales FROM products WHERE item_id = " + u_id;
     let currentQuant = 0;
     connection.query(getCurrentQuant, function (error, response) {
         
@@ -223,12 +226,14 @@ function updateInventory(u_quant, u_id) {
                 throw error;
             }
             currentQuant = response[0].stock_quantity;
-            console.log("\nThe current quant is: " + currentQuant);
-
-            let updatedQuant = currentQuant - u_quant;
-            console.log("The updated quant is: " + updatedQuant);
-            let update = "UPDATE products SET stock_quantity = " + updatedQuant + " WHERE item_id = " + u_id;
-            connection.query(update, function (error, response) {
+            currentSales = parseFloat(response[0].product_sales);
+            let updatedQuant = parseInt(currentQuant - u_quant);
+            let updatedSales = parseFloat(currentSales + u_total);
+            let update = "UPDATE products SET stock_quantity = " + 
+                        updatedQuant + " , product_sales = " + 
+                        updatedSales + " WHERE item_id = " + u_id;
+            
+            connection.query(update, function (error) {
                 if (error) {
                     throw error;
                 }
