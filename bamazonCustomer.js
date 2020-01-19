@@ -6,8 +6,10 @@ const colors = require("colors");
 const table = require("console.table");
 const _$ = require("currency-formatter");
 
+// stores returned database
 let db = {};
 
+// setup connection
 let connection = mysql.createConnection({
     host: "localhost",
     port: 3306,
@@ -16,6 +18,7 @@ let connection = mysql.createConnection({
     database: "bamazonDB"
 });
 
+// if connection is set, prompt user
 connection.connect(function (error) {
     if (error) {
         throw error;
@@ -97,6 +100,7 @@ function orderPrompt() {
         });
 }
 
+// gathers order information 
 function getOrder() {
     inquirer
         .prompt([{
@@ -104,6 +108,7 @@ function getOrder() {
             type: "input",
             message: "Which item would you like? (enter product_id)",
             validate: function (value) {
+                // verifies number entry
                 if (isNaN(value) === false) {
                     return true;
                 }
@@ -114,6 +119,7 @@ function getOrder() {
             type: "input",
             message: "How many would you like?",
             validate: function (value) {
+                // verifies number entry
                 if (isNaN(value) === false) {
                     return true;
                 }
@@ -125,30 +131,36 @@ function getOrder() {
         })
 }
 
+// gathers/checks order information
 function confirmOrder(id, quant) {
     let _item = "";
     let _quant = 0;
     let _price = 0.00;
     let c_price = 0.00;
     let c_total = 0.00;
+    // required since formatting is applied to c_total above
     let preFormatTotal = 0.00;
 
     for (let i = 0; i < db.length; i++) {
+        // gets order information based on id entered
         if (db[i].item_id === parseInt(id)) {
             _item = db[i].product_name;
             _quant = parseInt(db[i].stock_quantity);
             _price = parseFloat(db[i].price);
-
+            // applies money formatting for output
             c_price = _$.format(_price, {
                 code: 'USD'
             });
+            // calc total
             preFormatTotal = _price * quant;
+            // applies money formatting for output
             c_total = _$.format(preFormatTotal, {
                 code: 'USD'
             });
         }
     }
 
+    // catches incorrect data entry, gives feedback
     if (_item === "") {
         console.log(colors.brightRed("\n*** Item not found ***\n"));
         actionPrompt();
@@ -162,6 +174,7 @@ function confirmOrder(id, quant) {
     }
 }
 
+// presents/confirms order information with customer 
 function processOrder(p_item, p_quant, p_c_price, p_c_total, p_id, p_preFormatTotal) {
 
     console.log(colors.brightGreen("\nOrder Details: \n" +
@@ -202,6 +215,7 @@ function processOrder(p_item, p_quant, p_c_price, p_c_total, p_id, p_preFormatTo
         });
 }
 
+// gathers current products and inventory apart from the product_sales
 function displayProducts() {
     let query = "SELECT item_id, product_name, department_name, price, stock_quantity FROM products";
     connection.query(query, function (error, response) {
@@ -216,23 +230,25 @@ function displayProducts() {
     });
 }
 
+// updates inventory once an order is placed 
 function updateInventory(u_quant, u_id, u_total) {
-    console.log(u_total);
     let getCurrentQuant = "SELECT stock_quantity, product_sales FROM products WHERE item_id = " + u_id;
     let currentQuant = 0;
     connection.query(getCurrentQuant, function (error, response) {
-        
             if (error) {
                 throw error;
             }
+            // sets current quantity from db
             currentQuant = response[0].stock_quantity;
             currentSales = parseFloat(response[0].product_sales);
+            // ensures information is set as a float
             let updatedQuant = parseInt(currentQuant - u_quant);
             let updatedSales = parseFloat(currentSales + u_total);
+            // update query
             let update = "UPDATE products SET stock_quantity = " + 
                         updatedQuant + " , product_sales = " + 
                         updatedSales + " WHERE item_id = " + u_id;
-            
+            // runs update to database
             connection.query(update, function (error) {
                 if (error) {
                     throw error;
